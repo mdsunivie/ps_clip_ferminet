@@ -26,6 +26,8 @@ import jax
 import jax.numpy as jnp
 import kfac_jax
 from typing_extensions import Protocol
+from jax_privacy.clipping import clipped_grad
+
 
 
 @chex.dataclass
@@ -156,7 +158,8 @@ def make_loss(network: networks.LogFermiNetLike,
               clip_from_median: bool = True,
               center_at_clipped_energy: bool = True,
               complex_output: bool = False,
-              max_vmap_batch_size: int = 0) -> LossFn:
+              max_vmap_batch_size: int = 0,
+              use_ps_clipping: float = 0.0) -> LossFn:
   """Creates the loss function, including custom gradients.
 
   Args:
@@ -265,6 +268,25 @@ def make_loss(network: networks.LogFermiNetLike,
         data_tangents.charges,
     )
     psi_primal, psi_tangent = jax.jvp(batch_network, primals, tangents)
+    
+    #######################################
+    # CODE FOR PS-GRADIENT CLIPPING
+    #######################################
+
+    if use_ps_clipping>0.0:
+      ps_grad_fun = clipped_grad(network,l2_clip_norm=jnp.inf, return_grad_norms=True, batch_argnums=(1,2,3,4), keep_batch_dim = False)
+      _, grad_norms = ps_grad_fun(*primals)
+      grad_norms = grad_norms.grad_norms
+      grad_norms_mean = constants.pmean(jnp.mean(grad_norms))
+      grad_var = constants.pmean(jnp.mean(jnp.abs(grad_norms-grad_norms_mean)))
+      grad_clipping_mask = jax.lax.stop_gradient(jnp.clip((grad_norms_mean + ps_clipping_multiplier*grad_var)/(grad_norms+1e-6), max = 1))
+      grad_clipping_mask = jax.lax.cond(jnp.any(jnp.isnan(grad_clipping_mask)),
+                                        lambda _: jnp.ones_like(grad_clipping_mask),
+                                        lambda _: grad_clipping_mask,
+                                        operand=None)
+      diff = diff*grad_clipping_mask
+    ##############################################################################################
+
     if complex_output:
       clipped_el = diff + aux_data.clipped_energy
       term1 = (jnp.dot(clipped_el, jnp.conjugate(psi_tangent)) +
