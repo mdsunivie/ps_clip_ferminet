@@ -1,3 +1,9 @@
+# FermiNet with Per sample Gradient Clipping
+
+This repository contains a basic implementation of per-sample gradient clipping using [Jax-Privacy](https://github.com/google-deepmind/jax_privacy).
+
+To use per-sample gradient clipping it suffices to set the variable [optim.use_ps_clipping] in the config file to any value larger than 0.0.
+
 # FermiNet: Fermionic Neural Networks
 
 FermiNet is a neural network for learning highly accurate ground state
