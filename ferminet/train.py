@@ -798,6 +798,7 @@ def train(cfg: ml_collections.ConfigDict, writer_manager=None):
         center_at_clipped_energy=cfg.optim.center_at_clip,
         complex_output=use_complex,
         max_vmap_batch_size=cfg.optim.get('max_vmap_batch_size', 0),
+        use_ps_clipping = cfg.optim.use_ps_clipping
     )
   elif cfg.optim.objective == 'wqmc':
     evaluate_loss = qmc_loss_functions.make_wqmc_loss(
