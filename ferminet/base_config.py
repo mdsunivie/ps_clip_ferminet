@@ -68,6 +68,9 @@ def default() -> ml_collections.ConfigDict:
               'decay': 1.0,  # exponent of learning rate decay
               'delay': 10000.0,  # term that sets the scale of the rate decay
           },
+          # If greater than zero, scale (at which to clip the per sample gradients) in units
+          # of the mean deviation from the mean.
+          'use_ps_clipping': 0.0,
           # If greater than zero, scale (at which to clip local energy) in units
           # of the mean deviation from the mean.
           'clip_local_energy': 5.0,
