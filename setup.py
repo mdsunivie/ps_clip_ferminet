@@ -37,6 +37,7 @@ REQUIRED_PACKAGES = [
     'pyblock',
     'scipy',
     'typing_extensions',
+    'jax_privacy'
 ]
 
 
