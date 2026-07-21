@@ -241,7 +241,6 @@ def make_loss(network: networks.LogFermiNetLike,
     """Custom Jacobian-vector product for unbiased local energy gradients."""
     params, key, data = primals
     loss, aux_data = total_energy(params, key, data)
-
     if clip_local_energy > 0.0:
       aux_data.clipped_energy, diff = clip_local_values(
           aux_data.local_energy,
@@ -252,7 +251,6 @@ def make_loss(network: networks.LogFermiNetLike,
           complex_output)
     else:
       diff = aux_data.local_energy - loss
-
     # Due to the simultaneous requirements of KFAC (calling convention must be
     # (params, rng, data)) and Laplacian calculation (only want to take
     # Laplacian wrt electron positions) we need to change up the calling
@@ -268,11 +266,9 @@ def make_loss(network: networks.LogFermiNetLike,
         data_tangents.charges,
     )
     psi_primal, psi_tangent = jax.jvp(batch_network, primals, tangents)
-    
     #######################################
     # CODE FOR PS-GRADIENT CLIPPING
     #######################################
-
     if use_ps_clipping>0.0:
       ps_grad_fun = clipped_grad(network,l2_clip_norm=jnp.inf, return_grad_norms=True, batch_argnums=(1,2,3,4), keep_batch_dim = False)
       _, grad_norms = ps_grad_fun(*primals)
@@ -286,7 +282,6 @@ def make_loss(network: networks.LogFermiNetLike,
                                         operand=None)
       diff = diff*grad_clipping_mask
     ##############################################################################################
-
     if complex_output:
       clipped_el = diff + aux_data.clipped_energy
       term1 = (jnp.dot(clipped_el, jnp.conjugate(psi_tangent)) +
